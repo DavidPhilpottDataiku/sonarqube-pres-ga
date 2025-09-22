@@ -72,7 +72,6 @@ jobs:
 
           echo "PYTHON_LIBRARY_DIR=./bundle/project_config/lib/python" >> $GITHUB_ENV
           echo "TESTING_ENV_DIR=./bundle/python-envs/TestingCodeEnv" >> $GITHUB_ENV
-          echo "WORKING_DIR=$(pwd)" >> $GITHUB_ENV
 
       - name: Create virtualenv
         run: |
@@ -82,9 +81,9 @@ jobs:
 
       - name: Make report directories
         run: |
-          mkdir -p "$WORKING_DIR/.reports/mypy" \
-                   "$WORKING_DIR/.reports/pylint" \
-                   "$WORKING_DIR/.reports/pytest"
+          mkdir -p "$PYTHON_LIBRARY_DIR/.reports/mypy" \
+                   "$PYTHON_LIBRARY_DIR/.reports/pylint" \
+                   "$PYTHON_LIBRARY_DIR/.reports/pytest"
 
       - name: Run pylint
         run: |
@@ -97,16 +96,16 @@ jobs:
         run: |
           source ./.venv/bin/activate
           python -m mypy "$PYTHON_LIBRARY_DIR/app" \
-           > "$WORKING_DIR/.reports/mypy/mypy-report.txt" 2>&1 || true
+           > "$PYTHON_LIBRARY_DIR/.reports/mypy/mypy-report.txt" 2>&1 || true
 
       - name: Run pytest
         run: |
           source ./.venv/bin/activate
           python -m pytest "$PYTHON_LIBRARY_DIR/tests" -v --capture=no \
-          --junitxml="$WORKING_DIR/.reports/pytest/tests.xml" \
+          --junitxml="$PYTHON_LIBRARY_DIR/.reports/pytest/tests.xml" \
           --cov="$PYTHON_LIBRARY_DIR/app" \
-          --cov-report=xml:"$WORKING_DIR/.reports/pytest/coverage.xml" \
-          > "$WORKING_DIR/.reports/pytest/pytest-output.txt" 2>&1 || true
+          --cov-report=xml:"$PYTHON_LIBRARY_DIR/.reports/pytest/coverage.xml" \
+          > "$PYTHON_LIBRARY_DIR/.reports/pytest/pytest-output.txt" 2>&1 || true
 
       - name: Install sonar-scanner
         run: |
@@ -114,21 +113,6 @@ jobs:
           unzip -q sonar.zip -d $HOME
           echo "$HOME/sonar-scanner-5.0.1.3006-linux/bin" >> $GITHUB_PATH
 
-
-      - name: Debug
-        run: |
-          ls $WORKING_DIR
-          ls
-          ls bundle
-          ls .reports
-          ls .reports/pylint
-          ls .reports/pytest
-          ls .reports/mypy
-          cat ./.reports/pylint/pylint-report.txt
-          cat ./.reports/pytest/coverage.xml
-          cat ./.reports/pytest/tests.xml
-          cat ./.reports/mypy/mypy-report.txt
-          ls $PYTHON_LIBRARY_DIR
       - name: Run sonar-scanner
         env:
           SONARQUBE_IP: ${{ secrets.sonarqube_ip }}
@@ -146,10 +130,10 @@ jobs:
             -Dsonar.tests=tests \
             -Dsonar.exclusions="**/.venv/**,**/__pycache__/**,**/.reports/**" \
             -Dsonar.python.version=3.11 \
-            -Dsonar.python.pylint.reportPaths="$WORKING_DIR/.reports/pylint/pylint-report.txt" \
-            -Dsonar.python.coverage.reportPaths="$WORKING_DIR/.reports/pytest/coverage.xml" \
-            -Dsonar.python.xunit.reportPath="$WORKING_DIR/.reports/pytest/tests.xml" \
-            -Dsonar.python.mypy.reportPaths="$WORKING_DIR/.reports/mypy/mypy-report.txt" \
+            -Dsonar.python.pylint.reportPaths="$PYTHON_LIBRARY_DIR/.reports/pylint/pylint-report.txt" \
+            -Dsonar.python.coverage.reportPaths="$PYTHON_LIBRARY_DIR/.reports/pytest/coverage.xml" \
+            -Dsonar.python.xunit.reportPath="$PYTHON_LIBRARY_DIR/.reports/pytest/tests.xml" \
+            -Dsonar.python.mypy.reportPaths="$PYTHON_LIBRARY_DIR/.reports/mypy/mypy-report.txt" \
             | tee "./sonar-scanner-output.txt"
 
       - name: Upload SonarScanner output
