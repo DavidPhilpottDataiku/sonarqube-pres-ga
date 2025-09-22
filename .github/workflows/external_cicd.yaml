@@ -135,7 +135,7 @@ jobs:
             -Dsonar.python.pylint.reportPaths="./.reports/pylint/pylint-report.txt" \
             -Dsonar.python.coverage.reportPaths="./.reports/pytest/coverage.xml" \
             -Dsonar.python.xunit.reportPath="./.reports/pytest/tests.xml" \
-            -Dsonar.python.mypy.reportPaths="./.reports/mypy/mypy-report.txt"
+            -Dsonar.python.mypy.reportPaths="./.reports/mypy/mypy-report.txt" \
             | tee "./sonar-scanner-output.txt"
 
       - name: Upload SonarScanner output
