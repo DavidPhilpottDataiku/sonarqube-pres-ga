@@ -1,0 +1,136 @@
+name: Code Check with External CICD
+
+on:
+  workflow_dispatch: # run manually
+  push:
+    branches:
+      - main
+
+jobs:
+  export-bundle:
+    runs-on: ubuntu-latest
+    outputs:
+      bundle_id: ${{ steps.export.outputs.bundle_id }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install dataiku-api-client urllib3
+
+      - name: Export DSS Bundle
+        id: export
+        env:
+          DSS_DESIGN_IP: ${{ secret.dss_design_ip }}
+          DESIGN_API_KEY: ${{ secret.design_api_key }}
+        run: python .github/scripts/export_bundle.py
+
+      - name: Upload bundle.zip artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: bundle
+          path: ./bundle.zip
+
+  test-bundle:
+    needs: export-bundle
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Download bundle artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: bundle
+          path: ./artifacts
+
+      - name: Install system tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip uuid-runtime
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Prepare working directory
+        id: prep
+        run: |
+          BUNDLE_ID="${{ needs.export-bundle.outputs.bundle_id }}"
+          PROJECT_KEY="EXTERNAL_DEPLOYMENT"
+          UUID_VALUE=$(uuidgen)
+
+          mkdir -p "./bundle"
+          unzip -q "./artifacts/bundle.zip" -d "./bundle"
+
+          echo "PYTHON_LIBRARY_DIR=./bundle/project_config/lib/python" >> $GITHUB_ENV
+          echo "TESTING_ENV_DIR=./bundle/python-envs/TestingCodeEnv" >> $GITHUB_ENV
+
+      - name: Create virtualenv
+        run: |
+          python3 -m venv .venv"
+          source ./.venv/bin/activate
+          pip install -r "$TESTING_ENV_DIR/actual/requirements.txt"
+
+      - name: Make report directories
+        run: |
+          mkdir -p "./.reports/mypy" \
+                   "./.reports/pylint" \
+                   "./.reports/pytest"
+
+      - name: Run pylint
+        run: |
+          "source ./.venv/bin/activate
+            python -m pylint "$PYTHON_LIBRARY_DIR/app" \
+            --output-format=parseable \
+            > "./.reports/pylint/pylint-report.txt" 2>&1 || true
+
+      - name: Run mypy
+        run: |
+          "source ./.venv/bin/activate
+            python -m mypy "$PYTHON_LIBRARY_DIR/app" \
+            > "./.reports/mypy/mypy-report.txt" 2>&1 || true
+
+      - name: Run pytest
+        run: |
+          "source ./.venv/bin/activate
+            python -m pytest "$PYTHON_LIBRARY_DIR/tests" -v --capture=no \
+            --junitxml="$WORKING_DIR/.reports/pytest/tests.xml" \
+            --cov="$PYTHON_LIBRARY_DIR/app" \
+            --cov-report=xml:"$WORKING_DIR/.reports/pytest/coverage.xml" \
+            > "./.reports/pytest/pytest-output.txt" 2>&1 || true
+
+      - name: Install sonar-scanner
+        run: |
+          curl -sSLo sonar.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+          unzip -q sonar.zip -d $HOME
+          echo "$HOME/sonar-scanner-5.0.1.3006-linux/bin" >> $GITHUB_PATH
+
+      - name: Run sonar-scanner
+        env:
+          SONARQUBE_IP: ${{ secrets.sonarqube_ip }}
+          SONARQUBE_TOKEN: ${{ secrets.sonarqube_token }}
+        run: |
+          sonar-scanner \
+            -Dsonar.projectKey=demo_external_cicd \
+            -Dsonar.projectName="Demo External CICD" \
+            -Dsonar.token=SONARQUBE_TOKEN \
+            -Dsonar.host.url=SONARQUBE_IP \
+            -Dsonar.projectVersion=1.0 \
+            -Dsonar.scm.disabled=true \
+            -Dsonar.projectBaseDir="$PYTHON_LIBRARY_DIR" \
+            -Dsonar.sources=app \
+            -Dsonar.tests=tests \
+            -Dsonar.exclusions="**/.venv/**,**/__pycache__/**,**/.reports/**" \
+            -Dsonar.python.version=3.11 \
+            -Dsonar.python.pylint.reportPaths="./.reports/pylint/pylint-report.txt" \
+            -Dsonar.python.coverage.reportPaths="./.reports/pytest/coverage.xml" \
+            -Dsonar.python.xunit.reportPath="./.reports/pytest/tests.xml" \
+            -Dsonar.python.mypy.reportPaths="./.reports/mypy/mypy-report.txt"
