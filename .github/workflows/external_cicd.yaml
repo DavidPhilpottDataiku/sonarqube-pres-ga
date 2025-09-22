@@ -121,8 +121,8 @@ jobs:
           sonar-scanner \
             -Dsonar.projectKey=demo_external_cicd \
             -Dsonar.projectName="Demo External CICD" \
-            -Dsonar.token=SONARQUBE_TOKEN \
-            -Dsonar.host.url=SONARQUBE_IP \
+            -Dsonar.token=$SONARQUBE_TOKEN \
+            -Dsonar.host.url=$SONARQUBE_IP \
             -Dsonar.projectVersion=1.0 \
             -Dsonar.scm.disabled=true \
             -Dsonar.projectBaseDir="$PYTHON_LIBRARY_DIR" \
