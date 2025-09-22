@@ -115,6 +115,20 @@ jobs:
           unzip -q sonar.zip -d $HOME
           echo "$HOME/sonar-scanner-5.0.1.3006-linux/bin" >> $GITHUB_PATH
 
+
+      - name: Debug
+        run: |
+          ls
+          ls bundle
+          ls .reports
+          ls .reports/pylint
+          ls .reports/pytest
+          ls .reports/mypy
+          cat ./.reports/pylint/pylint-report.txt
+          cat ./.reports/pytest/coverage.xml
+          cat ./.reports/pytest/tests.xml
+          cat ./.reports/mypy/mypy-report.txt
+          ls $PYTHON_LIBRARY_DIR
       - name: Run sonar-scanner
         env:
           SONARQUBE_IP: ${{ secrets.sonarqube_ip }}
