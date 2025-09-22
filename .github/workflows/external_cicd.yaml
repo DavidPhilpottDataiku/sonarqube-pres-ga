@@ -104,9 +104,9 @@ jobs:
         run: |
           source ./.venv/bin/activate
           python -m pytest "$PYTHON_LIBRARY_DIR/tests" -v --capture=no \
-          --junitxml="$WORKING_DIR/.reports/pytest/tests.xml" \
+          --junitxml="./.reports/pytest/tests.xml" \
           --cov="$PYTHON_LIBRARY_DIR/app" \
-          --cov-report=xml:"$WORKING_DIR/.reports/pytest/coverage.xml" \
+          --cov-report=xml:"./.reports/pytest/coverage.xml" \
           > "./.reports/pytest/pytest-output.txt" 2>&1 || true
 
       - name: Install sonar-scanner
