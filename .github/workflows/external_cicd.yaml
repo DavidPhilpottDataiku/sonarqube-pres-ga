@@ -27,8 +27,8 @@ jobs:
       - name: Export DSS Bundle
         id: export
         env:
-          DSS_DESIGN_IP: ${{ secret.dss_design_ip }}
-          DESIGN_API_KEY: ${{ secret.design_api_key }}
+          DSS_DESIGN_IP: ${{ secrets.dss_design_ip }}
+          DESIGN_API_KEY: ${{ secrets.design_api_key }}
         run: python .github/scripts/export_bundle.py
 
       - name: Upload bundle.zip artifact
