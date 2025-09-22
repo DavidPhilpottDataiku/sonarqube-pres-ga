@@ -175,6 +175,8 @@ jobs:
             echo "Found SonarQube task ID: $TASK_ID"
             ANALYSIS_ID=""
             while true; do
+              echo "Response curl will be curl -s -u $SONARQUBE_TOKEN: $SONARQUBE_URL/api/ce/task?id=$TASK_ID"
+              curl -s -u "$SONARQUBE_TOKEN:" "$SONARQUBE_URL/api/ce/task?id=$TASK_ID"
               RESPONSE=$(curl -s -u "$SONARQUBE_TOKEN:" "$SONARQUBE_URL/api/ce/task?id=$TASK_ID" || echo "")
               echo "Response is $RESPONSE"
               STATUS=$(echo "$RESPONSE" | jq -r '.task.status' 2>/dev/null || echo "UNKNOWN")
