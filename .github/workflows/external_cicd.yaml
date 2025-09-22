@@ -90,13 +90,13 @@ jobs:
           source ./.venv/bin/activate
           python -m pylint "$PYTHON_LIBRARY_DIR/app" \
           --output-format=parseable \
-          > "$WORKING_DIR/.reports/pylint/pylint-report.txt" 2>&1 || true
+          > "$PYTHON_LIBRARY_DIR/.reports/pylint/pylint-report.txt" 2>&1 || true
 
       - name: Run mypy
         run: |
           source ./.venv/bin/activate
-          python -m mypy "$PYTHON_LIBRARY_DIR/app" \
-           > "$PYTHON_LIBRARY_DIR/.reports/mypy/mypy-report.txt" 2>&1 || true
+          cd "$PYTHON_LIBRARY_DIR"
+          python -m mypy app > .reports/mypy/mypy-report.txt 2>&1 || true
 
       - name: Run pytest
         run: |
