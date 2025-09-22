@@ -163,49 +163,38 @@ jobs:
 
       - name: Evaluate SonarQube Quality Gate
         run: |
-          set -e
-          
-          set -e
-          SONAR_OUTPUT_FILE="./sonar-scanner-output.txt"
-          SCANNER_OUTPUT=$(cat "$SONAR_OUTPUT_FILE")
-
-          TASK_ID=$(echo "$SCANNER_OUTPUT" | grep -oP '/api/ce/task\?id=\K[a-f0-9\-]+')
-          if [ -z "$TASK_ID" ]; then
-            echo "Could not find task ID in SonarScanner output"
-            exit 1
-          fi
-          echo "Found SonarQube task ID: $TASK_ID"
-
-          ANALYSIS_ID=""
-          while true; do
-            RESPONSE=$(curl -s -u "$SONARQUBE_TOKEN:" "$SONARQUBE_URL/api/ce/task?id=$TASK_ID")
-            STATUS=$(echo "$RESPONSE" | jq -r '.task.status')
-            echo "Task $TASK_ID status: $STATUS"
-
-            if [ "$STATUS" = "SUCCESS" ]; then
-              ANALYSIS_ID=$(echo "$RESPONSE" | jq -r '.task.analysisId')
-              break
-            elif [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "CANCELED" ]; then
-              echo "SonarQube task $TASK_ID failed or was canceled"
+            set -e
+            SONAR_OUTPUT_FILE="./sonar-scanner-output.txt"
+            SCANNER_OUTPUT=$(cat "$SONAR_OUTPUT_FILE")
+            TASK_ID=$(echo "$SCANNER_OUTPUT" | grep -oP '/api/ce/task\?id=\K[a-f0-9\-]+')
+            if [ -z "$TASK_ID" ]; then
+              echo "Could not find task ID in SonarScanner output"
               exit 1
             fi
-
-            sleep 3
-          done
-
-          if [ -z "$ANALYSIS_ID" ]; then
-            echo "Analysis ID not found"
-            exit 1
-          fi
-
-          # Check Quality Gate status
-          QUALITY_GATE_STATUS=$(curl -s -u "$SONARQUBE_TOKEN:" "$SONARQUBE_URL/api/qualitygates/project_status?analysisId=$ANALYSIS_ID" \
-            | jq -r '.projectStatus.status')
-          echo "Quality Gate status: $QUALITY_GATE_STATUS"
-
-          if [ "$QUALITY_GATE_STATUS" != "OK" ]; then
-            echo "Quality Gate failed"
-            exit 1
-          fi
-
-          echo "Quality Gate passed"
+            echo "Found SonarQube task ID: $TASK_ID"
+            ANALYSIS_ID=""
+            while true; do
+              RESPONSE=$(curl -s -u "$SONARQUBE_TOKEN:" "$SONARQUBE_URL/api/ce/task?id=$TASK_ID" || echo "")
+              STATUS=$(echo "$RESPONSE" | jq -r '.task.status' 2>/dev/null || echo "UNKNOWN")
+              echo "Task $TASK_ID status: $STATUS"
+              if [ "$STATUS" = "SUCCESS" ]; then
+                ANALYSIS_ID=$(echo "$RESPONSE" | jq -r '.task.analysisId')
+                break
+              elif [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "CANCELED" ]; then
+                echo "SonarQube task $TASK_ID failed or was canceled"
+                exit 1
+              fi
+              sleep 3
+            done
+            if [ -z "$ANALYSIS_ID" ]; then
+              echo "Analysis ID not found"
+              exit 1
+            fi
+            QUALITY_GATE_STATUS=$(curl -s -u "$SONARQUBE_TOKEN:" "$SONARQUBE_URL/api/qualitygates/project_status?analysisId=$ANALYSIS_ID" \
+              | jq -r '.projectStatus.status' 2>/dev/null || echo "UNKNOWN")
+            echo "Quality Gate status: $QUALITY_GATE_STATUS"
+            if [ "$QUALITY_GATE_STATUS" != "OK" ]; then
+              echo "Quality Gate failed"
+              exit 1
+            fi           
+            echo "Quality Gate passed"
