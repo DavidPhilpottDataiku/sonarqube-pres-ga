@@ -191,7 +191,7 @@ jobs:
               echo "Analysis ID not found"
               exit 1
             fi
-            QUALITY_GATE_STATUS=$(curl -s -u "$SONARQUBE_TOKEN:" "$SONARQUBE_URL/api/qualitygates/project_status?analysisId=$ANALYSIS_ID" \
+            QUALITY_GATE_STATUS=$(curl -s -u "$SONARQUBE_TOKEN:" "$SONARQUBE_URL/api/ce/task?id=$ANALYSIS_ID" \
               | jq -r '.projectStatus.status' 2>/dev/null || echo "UNKNOWN")
             echo "Quality Gate status: $QUALITY_GATE_STATUS"
             if [ "$QUALITY_GATE_STATUS" != "OK" ]; then
