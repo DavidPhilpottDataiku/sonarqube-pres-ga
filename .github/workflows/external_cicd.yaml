@@ -176,6 +176,7 @@ jobs:
             ANALYSIS_ID=""
             while true; do
               RESPONSE=$(curl -s -u "$SONARQUBE_TOKEN:" "$SONARQUBE_URL/api/ce/task?id=$TASK_ID" || echo "")
+              echo $RESPONSE
               STATUS=$(echo "$RESPONSE" | jq -r '.task.status' 2>/dev/null || echo "UNKNOWN")
               echo "Task $TASK_ID status: $STATUS"
               if [ "$STATUS" = "SUCCESS" ]; then
