@@ -87,25 +87,25 @@ jobs:
 
       - name: Run pylint
         run: |
-          "source ./.venv/bin/activate
-            python -m pylint "$PYTHON_LIBRARY_DIR/app" \
-            --output-format=parseable \
-            > "./.reports/pylint/pylint-report.txt" 2>&1 || true
+          source ./.venv/bin/activate
+          python -m pylint "$PYTHON_LIBRARY_DIR/app" \
+          --output-format=parseable \
+          > "./.reports/pylint/pylint-report.txt" 2>&1 || true
 
       - name: Run mypy
         run: |
-          "source ./.venv/bin/activate
-            python -m mypy "$PYTHON_LIBRARY_DIR/app" \
-            > "./.reports/mypy/mypy-report.txt" 2>&1 || true
+          source ./.venv/bin/activate
+          python -m mypy "$PYTHON_LIBRARY_DIR/app" \
+           > "./.reports/mypy/mypy-report.txt" 2>&1 || true
 
       - name: Run pytest
         run: |
-          "source ./.venv/bin/activate
-            python -m pytest "$PYTHON_LIBRARY_DIR/tests" -v --capture=no \
-            --junitxml="$WORKING_DIR/.reports/pytest/tests.xml" \
-            --cov="$PYTHON_LIBRARY_DIR/app" \
-            --cov-report=xml:"$WORKING_DIR/.reports/pytest/coverage.xml" \
-            > "./.reports/pytest/pytest-output.txt" 2>&1 || true
+          source ./.venv/bin/activate
+          python -m pytest "$PYTHON_LIBRARY_DIR/tests" -v --capture=no \
+          --junitxml="$WORKING_DIR/.reports/pytest/tests.xml" \
+          --cov="$PYTHON_LIBRARY_DIR/app" \
+          --cov-report=xml:"$WORKING_DIR/.reports/pytest/coverage.xml" \
+          > "./.reports/pytest/pytest-output.txt" 2>&1 || true
 
       - name: Install sonar-scanner
         run: |
