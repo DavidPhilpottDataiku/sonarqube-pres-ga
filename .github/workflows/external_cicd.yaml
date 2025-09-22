@@ -165,6 +165,7 @@ jobs:
         run: |
             set -e
             SONAR_OUTPUT_FILE="./sonar-scanner-output.txt"
+            cat $SONAR_OUTPUT_FILE
             SCANNER_OUTPUT=$(cat "$SONAR_OUTPUT_FILE")
             TASK_ID=$(echo "$SCANNER_OUTPUT" | grep -oP '/api/ce/task\?id=\K[a-f0-9\-]+')
             if [ -z "$TASK_ID" ]; then
