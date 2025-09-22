@@ -32,7 +32,7 @@ jobs:
         run: python .github/scripts/export_bundle.py
 
       - name: Upload bundle.zip artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: bundle
           path: ./bundle.zip
